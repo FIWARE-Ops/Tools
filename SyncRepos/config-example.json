@@ -1,0 +1,8 @@
+{
+    "repositories": [
+	    {
+	        "source": "none/test-source",
+	        "target": "none/test-target"
+        }
+    ]
+}
