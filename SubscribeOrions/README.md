@@ -1,10 +1,11 @@
-![FIWARE Banner](https://nexus.lab.fiware.org/repository/raw/public/images/fiware-logo1.png)
+![FIWARE Banner](https://nexus.lab.fiware.org/content/images/fiware-logo1.png)
 
 # Subscribe Orions
+[![Docker badge](https://img.shields.io/docker/pulls/fiware/tool.subscribeorions.svg)](https://hub.docker.com/r/fiware/tool.subscribeorions/)
 
 ## Overview
 This project is part of [FIWARE](https://fiware.org) OPS infrastructure.
-It allows to create subscriptions in the array of Orions from different templates.
+It allows to create subscriptions in the array of [Orions](https://fiware-orion.readthedocs.io/en/latest/) from different templates.
 
 ## How to use
 Subscribe test environment
