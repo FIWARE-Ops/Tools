@@ -12,7 +12,7 @@ $ run.py --config ${PATH_TO_CONFIG}
 
 Create an array of subscriptions in the orions and prepare output
 ```console
-$ run.py --config ${PATH_TO_CONFIG} --xls
+$ run.py --config ${PATH_TO_CONFIG} --xls .
 ```
 
 ## How to configure

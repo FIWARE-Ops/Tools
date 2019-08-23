@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', dest='config_path', help='path to config file',  action='store')
-    parser.add_argument('--xls', dest='xls', help='save output to excel file', action='store_true')
+    parser.add_argument('--xls', dest='xls', help='save output to excel file (folder)', action='store')
     args = parser.parse_args()
     config_path = args.config_path
     xls = args.xls
@@ -232,7 +232,7 @@ if __name__ == '__main__':
     print('errors :  ', count['errors'])
 
     if xls:
-        workbook = xlsxwriter.Workbook('info.xlsx')
+        workbook = xlsxwriter.Workbook(xls + '/info.xlsx')
 
         format_title = workbook.add_format({
             'align': 'center',

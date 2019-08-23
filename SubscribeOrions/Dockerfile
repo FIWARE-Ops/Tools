@@ -4,7 +4,7 @@ MAINTAINER Dmitrii Demin <mail@demin.co>
 RUN apk update \
 &&  apk add --update --no-cache py3-requests py3-pip \
 &&  pip3 install --upgrade pip \
-&&  pip3 install --upgrade prettytable \
+&&  pip3 install --upgrade xlsxwriter \
 &&  apk del py3-pip
 
 ADD run.py /opt/
