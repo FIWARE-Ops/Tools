@@ -4,7 +4,7 @@
 
 ## Overview
 This project is part of [FIWARE](https://fiware.org) OPS infrastructure.
-It grep information from GitHub repositories and represent it in excel-compatible form.
+It greps information from the GitHub repositories and represents it in an excel-compatible form.
 It collects:
 + General (GitHub API v3 fields)
     + description
@@ -27,4 +27,4 @@ $ python3 get.py --config <PATH_TO_CONFIG> --general --hooks
 
 ## How to configure
 + You should provide a valid token for GitHub with an environment variable TOKEN.
-+ Sample config is located [here](https://raw.githubusercontent.com/Fiware/devops.Tools/master/GetRepoInfo/config-example.json).
++ Sample config is located [here](./config.json.example).

@@ -1,6 +1,6 @@
 {
 	"repositories": [{
-			"source": "test/source"
+			"target": "test/test1"
 		}
 	]
 }

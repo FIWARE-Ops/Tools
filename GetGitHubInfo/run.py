@@ -6,8 +6,8 @@ import requests
 import os
 import sys
 import argparse
-from prettytable import PrettyTable
-from prettytable import MSWORD_FRIENDLY
+import xlsxwriter
+
 
 if __name__ == '__main__':
 
@@ -26,6 +26,9 @@ if __name__ == '__main__':
     config_path = args.config_path
     general = args.general
     hooks = args.hooks
+
+    gen_items = ['repo', 'description', 'has_issues', 'has_wiki', 'has_pages', 'has_projects', 'has_downloads']
+    hook_items = ['repo', 'active', 'url', 'type', 'ssl', 'events']
 
     if not general:
         if not hooks:
@@ -54,53 +57,38 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if general:
-        out = []
-        print('General')
+        gen = []
+        print('Collecting general info')
         for repo in config['repositories']:
-            url = 'https://api.github.com/repos/' + repo + '?access_token=' + token
+            url = 'https://api.github.com/repos/' + repo['target'] + '?access_token=' + token
             response = requests.get(url)
             if response.status_code == 200:
                 data = jsn.loads(response.text)
-                item = {'repo': repo,
+                item = {'repo': repo['target'],
                         'description': data['description'],
                         'has_issues': data['has_issues'],
                         'has_wiki': data['has_wiki'],
                         'has_pages': data['has_pages'],
                         'has_projects': data['has_projects'],
                         'has_downloads': data['has_downloads']}
-                out.append(dict(item))
+                gen.append(dict(item))
             else:
+                print('Something is wrong, check config')
                 sys.exit(1)
-        table = PrettyTable(['repo', 'description', 'has_issues', 'has_wiki', 'has_pages', 'has_projects', 'has_downloads'])
-        for el in out:
-            table.add_row([el['repo'],
-                           el['description'],
-                           el['has_issues'],
-                           el['has_wiki'],
-                           el['has_pages'],
-                           el['has_projects'],
-                           el['has_downloads']])
-
-        table.border = False
-        table.set_style(MSWORD_FRIENDLY)
-        table.align = 'l'
-        table.sortby = 'repo'
-        print(table)
-        print('\n')
 
     if hooks:
-        out = []
-        print('WebHooks')
+        hook = []
+        print('Collecting WebHooks info')
         for repo in config['repositories']:
             i = 1
             status = False
             while not status:
-                url = 'https://api.github.com/repos/' + repo + '/hooks' + '?page=' + str(i) + '&access_token=' + token
+                url = 'https://api.github.com/repos/' + repo['target'] + '/hooks' + '?page=' + str(i) + '&access_token=' + token
                 response = requests.get(url)
                 if response.status_code == 200:
                     data = jsn.loads(response.text)
                     for element in data:
-                        item = {'repo': repo,
+                        item = {'repo': repo['target'],
                                 'active': '',
                                 'url': '',
                                 'type': '',
@@ -116,8 +104,8 @@ if __name__ == '__main__':
                             if 'insecure_ssl' in element['config']:
                                 item['ssl'] = element['config']['insecure_ssl']
                         if 'events' in element:
-                            item['events'] = element['events']
-                        out.append(dict(item))
+                            item['events'] = jsn.dumps(element['events'])
+                        hook.append(dict(item))
                     if 'next' not in response:
                         status = True
                     else:
@@ -125,20 +113,74 @@ if __name__ == '__main__':
                 else:
                     print('Something is wrong, check config')
                     sys.exit(1)
-        table = PrettyTable(['repo', 'active', 'url', 'type', 'ssl', 'events'])
-        for el in out:
-            table.add_row([el['repo'],
-                           el['active'],
-                           el['url'],
-                           el['type'],
-                           el['ssl'],
-                           el['events']])
 
-        table.border = False
-        table.set_style(MSWORD_FRIENDLY)
-        table.align = 'l'
-        table.sortby = 'events'
-        print(table)
-        print('\n')
+    workbook = xlsxwriter.Workbook('info.xlsx')
 
+    format_title = workbook.add_format({
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'bold': True})
+
+    format_cell = workbook.add_format({
+        'align': 'left',
+        'valign': 'vcenter',
+        'border': 1,
+        'bold': False})
+
+    if general:
+        print('Fill in general')
+        ws_gen = workbook.add_worksheet()
+        max_size = dict()
+
+        col = 0
+        for item in gen_items:
+            ws_gen.write(0, col, item, format_title)
+            col += 1
+            max_size[item] = len(item)
+
+        row = 1
+        for el in range(0, len(gen)):
+            col = 0
+            for item in gen_items:
+                length = len(str(gen[el][item]))
+                if max_size[item] < length:
+                    max_size[item] = length
+                ws_gen.write(row, col, gen[el][item], format_cell)
+                col += 1
+            row += 1
+
+        col = 0
+        for item in gen_items:
+            ws_gen.set_column(col, col, max_size[item])
+            col += 1
+
+    if hooks:
+        print('Fill in hooks')
+        ws_hook = workbook.add_worksheet()
+        max_size = dict()
+
+        col = 0
+        for item in hook_items:
+            ws_hook.write(0, col, item, format_title)
+            col += 1
+            max_size[item] = len(item)
+
+        row = 1
+        for el in range(0, len(hook)):
+            col = 0
+            for item in hook_items:
+                length = len(str(hook[el][item]))
+                if max_size[item] < length:
+                    max_size[item] = length
+                ws_hook.write(row, col, hook[el][item], format_cell)
+                col += 1
+            row += 1
+
+        col = 0
+        for item in hook_items:
+            ws_hook.set_column(col, col, max_size[item])
+            col += 1
+
+    workbook.close()
     print('Finished')

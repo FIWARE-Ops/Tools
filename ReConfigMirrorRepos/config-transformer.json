@@ -1,0 +1,62 @@
+{
+	"format": "swagger20",
+	"branches": [
+		"master",
+		"gh-pages"
+	],
+	"repositories": [{
+			"source": "FIWARE-GEs/core.Orion",
+			"target": "Fiware/specifications",
+			"transform": true,
+			"files": [{
+				"source": "doc/apiary/v2/fiware-ngsiv2-reference.apib",
+				"target": "OpenAPI/ngsiv2/ngsiv2-openapi.json"
+			}]
+		},
+		{
+			"source": "FIWARE-GEs/iot-agent.NodeLib",
+			"target": "Fiware/specifications",
+			"transform": true,
+			"files": [{
+				"source": "doc/apiary/iotagent.apib",
+				"target": "OpenAPI/iot.IoTagent-node-lib/IoTagent-node-lib-openapi.json"
+			}]
+		},
+		{
+			"source": "FIWARE-GEs/security.Keyrock",
+			"target": "Fiware/specifications",
+			"transform": true,
+			"files": [{
+				"source": "apiary.apib",
+				"target": "OpenAPI/security.Idm/Idm-openapi.json"
+			}]
+		},
+		{
+			"source": "FIWARE-GEs/core.STH-Comet",
+			"target": "Fiware/specifications",
+			"transform": true,
+			"files": [{
+				"source": "apiary.apib",
+				"target": "OpenAPI/context.STH.Comet/STH.Comet-openapi.json"
+			}]
+		},
+		{
+			"source": "FIWARE-GEs/core.Cygnus",
+			"target": "Fiware/specifications",
+			"transform": true,
+			"files": [{
+				"source": "doc/apiary/apiary.apib",
+				"target": "OpenAPI/context.Cygnus/Cygnus-openapi.json"
+			}]
+		},
+		{
+			"source": "FIWARE-GEs/processing.Wirecloud",
+			"target": "Fiware/specifications",
+			"transform": true,
+			"files": [{
+				"source": "docs/restapi/applicationmashup.apib",
+				"target": "OpenAPI/apps.Wirecloud/Wirecloud-openapi.json"
+			}]
+		}
+	]
+}
