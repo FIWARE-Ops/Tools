@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     gc = gspread.authorize(credentials)
 
-    wks = gc.open_by_key(ID).worksheet('Mirror-Catalog')
+    wks = gc.open_by_key(ID).worksheet('Release-Mirror-Catalog')
 
     target = clean(wks.col_values(1))
     source = clean(wks.col_values(2))

@@ -28,15 +28,18 @@ if __name__ == '__main__':
 
     gc = gspread.authorize(credentials)
 
-    wks = gc.open_by_key(ID).worksheet('Mirror-Catalog')
-
-    target = clean(wks.col_values(1))
-
     result = list()
 
+    wks = gc.open_by_key(ID).worksheet('Release-Mirror-Catalog')
+    target = clean(wks.col_values(1))
     for el in range(0, len(target)):
         result.append(target[el])
 
+    wks = gc.open_by_key(ID).worksheet('Release-Mirror-NotCatalog')
+    target = clean(wks.col_values(1))
+    for el in range(0, len(target)):
+        result.append(target[el])
+     
     result = sorted(result, key=lambda k: k)
 
     f = open("prcloser.json", "w")
