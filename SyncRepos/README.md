@@ -1,18 +1,14 @@
-![FIWARE Banner](https://nexus.lab.fiware.org/repository/raw/public/images/fiware-logo1.png)
-
-# Synchronize Repositories
-
-## Overview
-This project is part of [FIWARE](https://fiware.org) OPS infrastructure.
-It synchronize GitHub repositories:
+## This tool:
+It synchronize
 + Commits
 + Branches
 + Tags
 + Releases
 
+
 ## How to run
 ```console
-$ python3 sync.py --config <PATH_TO_CONFIG> --commits --releases
+$ python3 run.py --config <PATH_TO_CONFIG> --commits --releases
 ```
 
 ## How to configure
