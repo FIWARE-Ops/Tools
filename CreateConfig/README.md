@@ -5,6 +5,7 @@ It scrapes information from a google spreedsheet and prepares a config for these
 + [PRCloser](https://github.com/FIWARE-Ops/PRCloser)
 + [APISpecTransformer](https://github.com/FIWARE-Ops/APISpecTransformer)
 + [Clair](https://github.com/flopezag/fiware-clair)
++ [TSC-Dashboard](https://github.com/flopezag/fiware-tsc-dashboard)
 
 ## How to run
 ```console
