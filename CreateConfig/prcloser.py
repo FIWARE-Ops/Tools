@@ -31,22 +31,15 @@ if __name__ == '__main__':
     wks = gc.open_by_key(ID).worksheet('Mirror-Catalog')
 
     target = clean(wks.col_values(1))
-    source = clean(wks.col_values(2))
 
-    result = dict()
-    result['repositories'] = list()
+    result = list()
 
     for el in range(0, len(target)):
-        data = dict()
+        result.append(target[el])
 
-        data['target'] = target[el]
-        data['source'] = source[el]
+    result = sorted(result, key=lambda k: k)
 
-        result['repositories'].append(data)
-
-    result['repositories'] = sorted(result['repositories'], key=lambda k: k['target'])
-
-    f = open("reposynchronizer.json", "w")
+    f = open("prcloser.json", "w")
     f.write(json.dumps(result, indent=2))
 
     print("Done")
