@@ -16,5 +16,6 @@ fi
 
 TOKEN=$(curl -X POST -s -d "username=${USER}&password=${PASSWORD}" https://tools.lab.fiware.org/ktp/${PROJECT})
 
+echo ""
 echo -e "\nToken: $TOKEN"
 echo ""
