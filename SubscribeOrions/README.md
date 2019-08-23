@@ -7,12 +7,12 @@ It allows to create subscriptions in the array of [Orions](https://fiware-orion.
 ## How to run
 Create an array of subscriptions in the test environment
 ```console
-$ sunscribe.py --config ${PATH_TO_CONFIG}
+$ run.py --config ${PATH_TO_CONFIG}
 ```
 Create an array of subscriptions in the production environment
 
 ```console
-$ sunscribe.py --config ${PATH_TO_CONFIG} --prod
+$ run.py --config ${PATH_TO_CONFIG} --prod
 ```
 
 ## How to configure

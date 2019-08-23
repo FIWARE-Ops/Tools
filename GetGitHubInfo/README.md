@@ -22,7 +22,7 @@ It collects:
 
 ## How to run
 ```console
-$ python3 get.py --config <PATH_TO_CONFIG> --general --hooks
+$ python3 run.py --config <PATH_TO_CONFIG> --general --hooks
 ```
 
 ## How to configure
