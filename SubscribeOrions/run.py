@@ -57,6 +57,7 @@ if __name__ == '__main__':
     config = dict()
     try:
         services = cfg['services']
+        prefix = cfg['prefix']
         config = list()
         for el in cfg['list']:
             tmp = dict()
@@ -66,7 +67,7 @@ if __name__ == '__main__':
             else:
                 tmp['description'] = 'subscription'
 
-            tmp['mark'] = el['mark']
+            tmp['mark'] = prefix + str(el['mark'])
 
             if 'path' in el:
                 tmp['path'] = el['path']
@@ -126,6 +127,7 @@ if __name__ == '__main__':
                             if 'httpCustom' in sub['notification']:
                                 if 'headers' in sub['notification']['httpCustom']:
                                     if 'mark' in sub['notification']['httpCustom']['headers']:
+                                        if re.search(prefix, sub['notification']['httpCustom']['headers']['mark']):
                                             requests.delete(url + '/'+sub['id'], headers=headers)
                                             if 'description' in sub:
                                                 item['description'] = sub['description']
@@ -172,7 +174,7 @@ if __name__ == '__main__':
 
                 template = jsn.load(open(file))
                 template['notification']['httpCustom']['url'] = el['target'] + template['notification']['httpCustom']['url']
-                template['notification']['httpCustom']['headers'] = {'mark': str(el['mark'])}
+                template['notification']['httpCustom']['headers'] = {'mark': el['mark']}
                 template['description'] = el['description']
 
                 data = jsn.dumps(template)

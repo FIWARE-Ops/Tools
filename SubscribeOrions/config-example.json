@@ -2,6 +2,7 @@
     "services": [
         ""
     ],
+    "prefix": "test",
     "list": [
         {
             "description": "Test1",
