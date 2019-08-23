@@ -2,22 +2,21 @@
     "services": [
         ""
     ],
-    "prefix": "PREFIX--",
     "list": [
         {
+            "description": "Test1",
+            "mark": 1,
+            "path": "path",
+            "service": "t_service",
             "source": "https://example.com",
+            "state": "disabled",
             "target": "orion1:1026",
-            "description": "PREFIX--Test1",
-            "service": "t_test1",
-            "state": "enabled",
-            "template": "v1",
-            "test": "true",
-            "fw_id": 1
+            "template": "v1"
         },
         {
+            "mark": 2,
             "source": "https://example.com",
             "target": "orion2:1026",
-            "description": "PREFIX--Test2",
             "template": "v2"
         }
     ]

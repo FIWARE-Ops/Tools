@@ -5,14 +5,14 @@
 It allows to create subscriptions in the array of [Orions](https://fiware-orion.readthedocs.io/en/latest/) from different templates.
 
 ## How to run
-Create an array of subscriptions in the test environment
+Create an array of subscriptions in the orions
 ```console
 $ run.py --config ${PATH_TO_CONFIG}
 ```
-Create an array of subscriptions in the production environment
 
+Create an array of subscriptions in the orions and prepare output
 ```console
-$ run.py --config ${PATH_TO_CONFIG} --prod
+$ run.py --config ${PATH_TO_CONFIG} --xls
 ```
 
 ## How to configure

@@ -8,7 +8,7 @@
         ]
     },
     "notification": {
-        "http": {
+        "httpCustom": {
             "url": "/v2/op/notify"
         }
     },
