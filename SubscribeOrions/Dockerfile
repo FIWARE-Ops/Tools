@@ -8,9 +8,9 @@ RUN apk update \
 &&  apk del py3-pip
 
 ADD subscribe.py /opt/
-ADD templates /opt/
-ADD config.json /opt/
+ADD config-example.json /opt/config.json
+ADD templates /opt/templates
 
 WORKDIR /opt/
 
-CMD ["python3", "-u", "/opt/subscribe.py", "--config", "/opt/config.json"]
+ENTRYPOINT ["python3", "-u", "/opt/subscribe.py", "--config", "/opt/config.json"]

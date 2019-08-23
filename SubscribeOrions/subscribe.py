@@ -68,6 +68,7 @@ if __name__ == "__main__":
     services = config['services']
     prefix = config['prefix']
 
+    print('Started')
     for el in config['list']:
         count['config'] += 1
         headers.clear()
@@ -92,7 +93,7 @@ if __name__ == "__main__":
             done.append(el['source'])
             for service in services:
                 headers['Fiware-Service'] = service
-                resp = requests.get(url, headers=headers).json()
+                resp = requests.get(url + '?limit=200', headers=headers).json()
                 for sub in resp:
                     count['found'] += 1
                     ignore = False
@@ -133,24 +134,18 @@ if __name__ == "__main__":
                         out.append(dict(item))
                         count['ignored'] += 1
 
-        # Check if prod only
-        if 'test' not in el:
-            check = True
-        elif el['test'] == 'true':
-            check = True
-        elif el['test'] == 'false' and prod in os.environ:
-            check = True
-        else:
-            check = False
+        # Check if valid for test
+        check = True
+        if 'test' in el:
+            if el['test'] == 'false':
+                if not prod:
+                    check = False
 
         # Check if enabled
+        state = True
         if 'state' in el:
-            if el['state'] == 'enabled':
-                state = True
-            else:
+            if el['state'] == 'disabled':
                 state = False
-        else:
-            state = True
 
         if not check or not state:
             count['disabled'] += 1
