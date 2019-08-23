@@ -36,7 +36,9 @@ if __name__ == '__main__':
             item['image'] = images[el]
             result['enablers'].append(item)
 
+    result['enablers'] = sorted(result['enablers'], key=lambda k: k['name'])
+
     f = open(out, 'w')
-    f.write(dumps(result, indent=4))
+    f.write(dumps(result, indent=4) + '\n')
 
     print("Done")
