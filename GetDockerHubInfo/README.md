@@ -1,4 +1,4 @@
-## Info:
+## Info
 This tool is a part of [FIWARE](https://fiware.org) OPS infrastructure.
 It scrapes information about Docker images from the Docker Hub repository and represents it in an excel-compatible form.
 

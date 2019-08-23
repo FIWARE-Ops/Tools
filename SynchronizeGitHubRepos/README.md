@@ -1,10 +1,10 @@
-## This tool:
-It synchronizes:
+## Info
+This tool is a part of [FIWARE](https://fiware.org) OPS infrastructure.
+It synchronizes 2 GitHub repositories:
 + Commits
 + Branches
 + Tags
 + Releases
-
 
 ## How to run
 ```console

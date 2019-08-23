@@ -78,7 +78,7 @@ if __name__ == '__main__':
         else:
             exit(1)
 
-    print('preparing xml')
+    print('preparing xlsx')
     workbook = Workbook('info.xlsx')
     worksheet1 = workbook.add_worksheet()
     worksheet2 = workbook.add_worksheet()

@@ -11,4 +11,4 @@
 + [Reconfigure Mirror Repositories in the GitHub](./ReConfigMirrorRepos)
 + [Subscribe the list of Orions](./SubscribeOrions)
 + [Synchronize Repositories in the GitHub](./SynchronizeGitHubRepos)
-+ [Synchronize Organizations in the DockerHub](./SynchronizeDockerHubRepos)
++ [Synchronize Organizations in the DockerHub](./SynchronizeDockerHubOrgs)
