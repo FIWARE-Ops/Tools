@@ -1,11 +1,10 @@
 ## Info
 This tool is a part of [FIWARE](https://fiware.org) OPS infrastructure.
-Itcreates WebHooks for:
+It creates WebHooks for:
 + [ApiSpecTransformer](https://github.com/FIWARE-Ops/APISpecTransformer)
 + [RepoSynchronizer](https://github.com/FIWARE-Ops/RepoSynchronizer)
-And changes descriptions, as well as 
 
-and changes description of repository
+and changes description, as well as configuration
 
 ## How to run
 ```console
