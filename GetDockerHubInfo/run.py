@@ -1,34 +1,35 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import json as jsn
-import requests
-import sys
-import xlsxwriter
-import argparse
+from argparse import ArgumentParser
+from json import loads
+from requests import get
+from xlsxwriter import Workbook
+
+
+repo_items = ['name', 'star_count', 'is_automated', 'source_repo', 'last_updated', 'pull_count']
+build_items = ['repo', 'name', 'last_updated']
+url_template = 'https://hub.docker.com/v2/repositories/'
 
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument('--owner', dest="owner", default='fiware', help='owner (default: fiware)', action="store")
-
     args = parser.parse_args()
 
-    owner = args.owner
-
-    repo_items = ['name', 'star_count', 'is_automated', 'source_repo', 'last_updated', 'pull_count']
-    build_items = ['repo', 'name', 'last_updated']
     repos = list()
     tags = list()
-    url = 'https://hub.docker.com/v2/repositories/' + owner + '/'
+
+    url_template = url_template + args.owner + '/'
 
     print('collecting main data')
+    url = url_template
     while True:
-        reply = requests.get(url)
+        reply = get(url)
 
         if reply.status_code == 200:
-            resp = jsn.loads(reply.text)
+            resp = loads(reply.text)
             for el in range(0, len(resp['results'])):
                 block = dict()
                 for item in repo_items:
@@ -43,27 +44,27 @@ if __name__ == '__main__':
             else:
                 url = resp['next']
         else:
-            sys.exit(1)
+            exit(1)
 
     print('collecting source_repo data')
     for el in range(0, len(repos)):
         if repos[el]['is_automated']:
-            url = 'https://hub.docker.com/v2/repositories/' + owner + '/' + repos[el]['name'] + '/autobuild'
-            reply = requests.get(url)
+            url = url_template + repos[el]['name'] + '/autobuild'
+            reply = get(url)
             if reply.status_code == 200:
-                resp = jsn.loads(reply.text)
+                resp = loads(reply.text)
                 repos[el]['source_repo'] = resp['source_url'].strip()
             else:
-                sys.exit(1)
+                exit(1)
         else:
             repos[el]['source_repo'] = ''
 
     print('collecting tags data')
     for el in range(0, len(repos)):
-        url = 'https://hub.docker.com/v2/repositories/' + owner + '/' + repos[el]['name'] + '/tags'
-        reply = requests.get(url)
+        url = url_template + repos[el]['name'] + '/tags'
+        reply = get(url)
         if reply.status_code == 200:
-            resp = jsn.loads(reply.text)
+            resp = loads(reply.text)
             for tag in resp['results']:
                 block = dict()
                 block['repo'] = repos[el]['name']
@@ -75,10 +76,10 @@ if __name__ == '__main__':
                             block[item] = ''
                 tags.append(block)
         else:
-            sys.exit(1)
+            exit(1)
 
     print('preparing xml')
-    workbook = xlsxwriter.Workbook('info.xlsx')
+    workbook = Workbook('info.xlsx')
     worksheet1 = workbook.add_worksheet()
     worksheet2 = workbook.add_worksheet()
 

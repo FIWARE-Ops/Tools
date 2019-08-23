@@ -4,9 +4,11 @@
 [![License badge](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## The list of tools
-+ [Create config file for the webhooks](./CreateConfig)
++ [Create a config file for the webhooks](./CreateConfig)
 + [Get information about the DockerHub repositories](./GetDockerHubInfo)
 + [Get Information about the GitHub repositories](./GetGitHubInfo)
-+ [Reconfigure Mirror Repositories](./ReConfigMirrorRepos)
++ [Get OAuth2 token](./GetToken)
++ [Reconfigure Mirror Repositories in the GitHub](./ReConfigMirrorRepos)
 + [Subscribe the list of Orions](./SubscribeOrions)
-+ [Synchronize Repositories](./SynchronizeRepos)
++ [Synchronize Repositories in the GitHub](./SynchronizeGitHubRepos)
++ [Synchronize Organizations in the DockerHub](./SynchronizeDockerHubRepos)

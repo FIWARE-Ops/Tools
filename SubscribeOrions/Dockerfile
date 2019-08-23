@@ -1,16 +1,11 @@
-FROM alpine
-MAINTAINER Dmitrii Demin <mail@demin.co>
+FROM python:3.7.2-alpine
 
-RUN apk update \
-&&  apk add --update --no-cache py3-requests py3-pip \
-&&  pip3 install --upgrade pip \
-&&  pip3 install --upgrade xlsxwriter \
-&&  apk del py3-pip
-
-ADD run.py /opt/
-ADD config-example.json /opt/config.json
-ADD templates /opt/templates
+LABEL maintainer="mail@demin.co"
 
 WORKDIR /opt/
 
-ENTRYPOINT ["python3", "-u", "/opt/run.py", "--config", "/opt/config.json"]
+COPY . /opt/
+
+RUN pip3 install -r requirements.txt
+
+ENTRYPOINT ["/usr/bin/env", "python3", "-u", "/opt/run.py", "--config", "/opt/config.json"]

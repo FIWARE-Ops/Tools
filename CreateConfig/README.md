@@ -1,10 +1,13 @@
-## This tool:
-Creates config from a google spreedsheet for these webhooks:
+## Info
+This tool is a part of [FIWARE](https://fiware.org) OPS infrastructure.
+It scrapes information from a google spreedsheet and prepares a config for these webhooks:
 + [RepoSynchronizer](https://github.com/FIWARE-Ops/RepoSynchronizer)
++ [PRCloser](https://github.com/FIWARE-Ops/PRCloser)
++ [APISpecTransformer](https://github.com/FIWARE-Ops/APISpecTransformer)
 
 ## How to run
 ```console
-$ python3 reposynchronizer.py --id ${SOME_GDOC_ID}>
+$ python3 reposynchronizer.py --id ${SOME_GDOC_ID}
 ```
 
 ## How to configure

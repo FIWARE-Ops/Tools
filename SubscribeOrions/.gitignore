@@ -1,3 +1,2 @@
-config-test.json
-build.sh
-*.xlsx
+*.sh
+!templates/default.json

@@ -1,24 +1,25 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import json as jsn
-import requests
-import os
-import sys
-import argparse
-import xlsxwriter
+from argparse import ArgumentParser
+from json import load, loads, dumps
+from os import environ, path
+from requests import get
+from xlsxwriter import Workbook
+
+url_template = 'https://api.github.com/repos/'
 
 
 if __name__ == '__main__':
 
-    if 'TOKEN' in os.environ:
-        token = os.environ['TOKEN']
+    if 'TOKEN' in environ:
+        token = environ['TOKEN']
     else:
         print('TOKEN not found')
         token = None
-        sys.exit(1)
+        exit(1)
 
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument('--config', dest='config_path', help='path to config file',  action="store")
     parser.add_argument('--general', dest='general', help='get general info',  action="store_true")
     parser.add_argument('--hooks', dest='hooks', help='get webhooks info',  action="store_true")
@@ -27,43 +28,45 @@ if __name__ == '__main__':
     general = args.general
     hooks = args.hooks
 
+    print("Started")
+
     gen_items = ['repo', 'description', 'has_issues', 'has_wiki', 'has_pages', 'has_projects', 'has_downloads']
     hook_items = ['repo', 'active', 'url', 'type', 'ssl', 'events']
 
     if not general:
         if not hooks:
             print('At lease one option should be defined')
-            sys.exit(1)
+            exit(1)
 
-    if not os.path.isfile(config_path):
+    if not path.isfile(config_path):
         print('Config file not found')
         config_file = None
-        sys.exit(1)
+        exit(1)
 
     try:
         with open(config_path) as f:
-            config = jsn.load(f)
+            config = load(f)
     except ValueError:
         print('Unsupported config type')
-        sys.exit(1)
+        exit(1)
 
     print('Checking config')
 
     if 'repositories' not in config:
         print('Repositories not defined')
-        sys.exit(1)
+        exit(1)
     elif len(config['repositories']) == 0:
         print('Repositories list is empty')
-        sys.exit(1)
+        exit(1)
 
     if general:
         gen = []
         print('Collecting general info')
         for repo in config['repositories']:
-            url = 'https://api.github.com/repos/' + repo['target'] + '?access_token=' + token
-            response = requests.get(url)
+            url = url_template + repo['target'] + '?access_token=' + token
+            response = get(url)
             if response.status_code == 200:
-                data = jsn.loads(response.text)
+                data = loads(response.text)
                 item = {'repo': repo['target'],
                         'description': data['description'],
                         'has_issues': data['has_issues'],
@@ -74,7 +77,7 @@ if __name__ == '__main__':
                 gen.append(dict(item))
             else:
                 print('Something is wrong, check config')
-                sys.exit(1)
+                exit(1)
 
     if hooks:
         hook = []
@@ -83,10 +86,10 @@ if __name__ == '__main__':
             i = 1
             status = False
             while not status:
-                url = 'https://api.github.com/repos/' + repo['target'] + '/hooks' + '?page=' + str(i) + '&access_token=' + token
-                response = requests.get(url)
+                url = url_template + repo['target'] + '/hooks' + '?page=' + str(i) + '&access_token=' + token
+                response = get(url)
                 if response.status_code == 200:
-                    data = jsn.loads(response.text)
+                    data = loads(response.text)
                     for element in data:
                         item = {'repo': repo['target'],
                                 'active': '',
@@ -104,7 +107,7 @@ if __name__ == '__main__':
                             if 'insecure_ssl' in element['config']:
                                 item['ssl'] = element['config']['insecure_ssl']
                         if 'events' in element:
-                            item['events'] = jsn.dumps(element['events'])
+                            item['events'] = dumps(element['events'])
                         hook.append(dict(item))
                     if 'next' not in response:
                         status = True
@@ -112,9 +115,9 @@ if __name__ == '__main__':
                         i = i + 1
                 else:
                     print('Something is wrong, check config')
-                    sys.exit(1)
+                    exit(1)
 
-    workbook = xlsxwriter.Workbook('info.xlsx')
+    workbook = Workbook('info.xlsx')
 
     format_title = workbook.add_format({
         'align': 'center',
@@ -183,4 +186,4 @@ if __name__ == '__main__':
             col += 1
 
     workbook.close()
-    print('Finished')
+    print("Done")

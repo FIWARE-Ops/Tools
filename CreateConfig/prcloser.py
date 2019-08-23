@@ -1,8 +1,14 @@
-import gspread
-import json
-import argparse
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
+from argparse import ArgumentParser
+from gspread import authorize
+from json import dumps
 from oauth2client.service_account import ServiceAccountCredentials
+
+scope = ['https://spreadsheets.google.com/feeds']
+out = 'prcloser.json'
+ws_list = ['Release-Mirror-Catalog', 'Release-Mirror-NotCatalog']
 
 
 def clean(column):
@@ -12,37 +18,27 @@ def clean(column):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
+    parser = ArgumentParser()
     parser.add_argument('--id', dest="id", required=True, help='ID of google doc', action="store")
-
     args = parser.parse_args()
-
-    ID = args.id
 
     print("Started")
 
-    scope = ['https://spreadsheets.google.com/feeds']
-
-    credentials = ServiceAccountCredentials.from_json_keyfile_name('auth.json', scope)
-
-    gc = gspread.authorize(credentials)
-
     result = list()
 
-    wks = gc.open_by_key(ID).worksheet('Release-Mirror-Catalog')
-    target = clean(wks.col_values(1))
-    for el in range(0, len(target)):
-        result.append(target[el])
+    credentials = ServiceAccountCredentials.from_json_keyfile_name('auth.json', scope)
+    gc = authorize(credentials)
 
-    wks = gc.open_by_key(ID).worksheet('Release-Mirror-NotCatalog')
-    target = clean(wks.col_values(1))
-    for el in range(0, len(target)):
-        result.append(target[el])
+    for ws in ws_list:
+        wks = gc.open_by_key(args.id).worksheet(ws)
+        target = clean(wks.col_values(1))
+
+        for el in range(0, len(target)):
+            result.append(target[el])
      
     result = sorted(result, key=lambda k: k)
 
-    f = open("prcloser.json", "w")
-    f.write(json.dumps(result, indent=2))
+    f = open(out, 'w')
+    f.write(dumps(result, indent=2))
 
     print("Done")

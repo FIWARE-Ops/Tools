@@ -1,0 +1,6 @@
+*.sh
+*.json
+*.xlsx
+*out*
+*.md
+Dockerfile

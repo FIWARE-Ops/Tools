@@ -1,20 +1,13 @@
-## Docker info
-[![Docker badge](https://img.shields.io/docker/pulls/fiware/tool.subscribeorions.svg)](https://hub.docker.com/r/fiware/tool.subscribeorions/)
-
-## This tools
-It allows to create subscriptions in the array of [Orions](https://fiware-orion.readthedocs.io/en/latest/) from different templates.
+## Info
+This tool is a part of [FIWARE](https://fiware.org) OPS infrastructure.
+It creates subscriptions in the array of [Orions](https://fiware-orion.readthedocs.io/en/latest/) from different templates.
 
 ## How to run
-Create an array of subscriptions in the orions
-```console
-$ run.py --config ${PATH_TO_CONFIG}
-```
-
 Create an array of subscriptions in the orions and prepare output
 ```console
-$ run.py --config ${PATH_TO_CONFIG} --xls .
+$ python3 run.py --config ${PATH_TO_CONFIG} --xls .
 ```
 
 ## How to configure
 + Templates should be at the same level as python script. 
-+ Sample template is located [here](./templates/default.json) 
++ Sample template is located [here](./templates/default.json.example) 

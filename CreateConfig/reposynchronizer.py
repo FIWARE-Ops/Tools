@@ -1,8 +1,13 @@
-import gspread
-import json
-import argparse
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+from argparse import ArgumentParser
+from gspread import authorize
+from json import dumps
 from oauth2client.service_account import ServiceAccountCredentials
+
+scope = ['https://spreadsheets.google.com/feeds']
+out = 'reposynchronizer.json'
 
 
 def clean(column):
@@ -12,29 +17,22 @@ def clean(column):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
+    parser = ArgumentParser()
     parser.add_argument('--id', dest="id", required=True, help='ID of google doc', action="store")
-
     args = parser.parse_args()
-
-    ID = args.id
 
     print("Started")
 
-    scope = ['https://spreadsheets.google.com/feeds']
+    result = dict()
+    result['repositories'] = list()
 
     credentials = ServiceAccountCredentials.from_json_keyfile_name('auth.json', scope)
+    gc = authorize(credentials)
 
-    gc = gspread.authorize(credentials)
-
-    wks = gc.open_by_key(ID).worksheet('Release-Mirror-Catalog')
+    wks = gc.open_by_key(args.id).worksheet('Release-Mirror-Catalog')
 
     target = clean(wks.col_values(1))
     source = clean(wks.col_values(2))
-
-    result = dict()
-    result['repositories'] = list()
 
     for el in range(0, len(target)):
         data = dict()
@@ -46,7 +44,7 @@ if __name__ == '__main__':
 
     result['repositories'] = sorted(result['repositories'], key=lambda k: k['target'])
 
-    f = open("reposynchronizer.json", "w")
-    f.write(json.dumps(result, indent=2))
+    f = open(out, 'w')
+    f.write(dumps(result, indent=2))
 
     print("Done")

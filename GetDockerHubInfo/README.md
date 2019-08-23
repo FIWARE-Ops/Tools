@@ -1,5 +1,8 @@
-## This tool:
-It collects image info from the Docker Hub owner repository:
+## Info:
+This tool is a part of [FIWARE](https://fiware.org) OPS infrastructure.
+It scrapes information about Docker images from the Docker Hub repository and represents it in an excel-compatible form.
+
+It collects:
 + pull count
 + last update
 + source repository

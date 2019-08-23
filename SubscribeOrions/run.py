@@ -1,16 +1,28 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-import json as jsn
-import requests
-import os
-import sys
-import re
-import argparse
-import xlsxwriter
+from argparse import ArgumentParser
+from json import load, dumps
+from os import path
+from re import search, sub
+from requests import get, post, delete
+from xlsxwriter import Workbook
+
+
+count = {'config': 0,
+         'added': 0,
+         'deleted': 0,
+         'found': 0,
+         'ignored': 0,
+         'disabled': 0,
+         'errors': 0}
+
+items = ['type', 'source', 'target', 'service', 'path', 'description', 'mark', 'id']
+
 
 def check_validity(orion):
     link = orion + '/version'
-    reply = requests.get(link)
+    reply = get(link)
     if reply.status_code == 200:
         return True
     else:
@@ -19,42 +31,29 @@ def check_validity(orion):
 
 if __name__ == '__main__':
 
-    url = ''
-    out = []
-    done = []
-    item = {}
-    headers = {}
-    count = {'config': 0,
-             'added': 0,
-             'deleted': 0,
-             'found': 0,
-             'ignored': 0,
-             'disabled': 0,
-             'errors': 0}
-
-    items = ['type', 'source', 'target', 'service', 'path', 'description', 'mark', 'id']
-
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument('--config', dest='config_path', help='path to config file',  action='store')
     parser.add_argument('--xls', dest='xls', help='save output to excel file (folder)', action='store')
     args = parser.parse_args()
-    config_path = args.config_path
-    xls = args.xls
 
-    if not os.path.isfile(config_path):
+    if not path.isfile(args.config_path):
         print('Config file not found')
         config_file = None
-        sys.exit(1)
+        exit(1)
 
     try:
-        with open(config_path) as f:
-            cfg = jsn.load(f)
+        with open(args.config_path) as f:
+            cfg = load(f)
     except ValueError:
         print('Unsupported config type')
-        sys.exit(1)
+        exit(1)
 
     print('Checking config')
-    config = dict()
+
+    services = None
+    config = None
+    prefix = None
+
     try:
         services = cfg['services']
         prefix = cfg['prefix']
@@ -97,10 +96,14 @@ if __name__ == '__main__':
             config.append(tmp)
     except KeyError:
         print('Config error')
-        sys.exit(1)
+        exit(1)
 
     print('Started')
     item = dict()
+    headers = dict()
+    done = list()
+    out = list()
+
     for el in config:
         count['config'] += 1
         headers.clear()
@@ -118,44 +121,44 @@ if __name__ == '__main__':
 
                 for service in services:
                     headers['Fiware-Service'] = service
-                    resp = requests.get(url + '?limit=200', headers=headers).json()
-                    for sub in resp:
+                    resp = get(url + '?limit=200', headers=headers).json()
+                    for el_sub in resp:
                         count['found'] += 1
                         ignore = True
                         item.clear()
-                        if 'notification' in sub:
-                            if 'httpCustom' in sub['notification']:
-                                if 'headers' in sub['notification']['httpCustom']:
-                                    if 'mark' in sub['notification']['httpCustom']['headers']:
-                                        if re.search(prefix, sub['notification']['httpCustom']['headers']['mark']):
-                                            requests.delete(url + '/'+sub['id'], headers=headers)
-                                            if 'description' in sub:
-                                                item['description'] = sub['description']
-                                            item['id'] = sub['id']
-                                            item['mark'] = sub['notification']['httpCustom']['headers']['mark']
+                        if 'notification' in el_sub:
+                            if 'httpCustom' in el_sub['notification']:
+                                if 'headers' in el_sub['notification']['httpCustom']:
+                                    if 'mark' in el_sub['notification']['httpCustom']['headers']:
+                                        if search(prefix, el_sub['notification']['httpCustom']['headers']['mark']):
+                                            delete(url + '/'+el_sub['id'], headers=headers)
+                                            if 'description' in el_sub:
+                                                item['description'] = el_sub['description']
+                                            item['id'] = el_sub['id']
+                                            item['mark'] = el_sub['notification']['httpCustom']['headers']['mark']
                                             item['path'] = ''
                                             item['service'] = service
                                             item['source'] = el['source']
-                                            item['target'] = sub['notification']['httpCustom']['url']
+                                            item['target'] = el_sub['notification']['httpCustom']['url']
                                             item['type'] = 'deleted'
                                             out.append(dict(item))
                                             count['deleted'] += 1
                                             ignore = False
 
                         if ignore:
-                            if 'description' in sub:
-                                item['description'] = sub['description']
+                            if 'description' in el_sub:
+                                item['description'] = el_sub['description']
                             else:
                                 item['description'] = ''
-                            item['id'] = sub['id']
+                            item['id'] = el_sub['id']
                             item['mark'] = ''
                             item['path'] = ''
                             item['service'] = service
                             item['source'] = el['source']
-                            if 'http' in sub['notification']:
-                                item['target'] = sub['notification']['http']['url']
-                            if 'httpCustom' in sub['notification']:
-                                item['target'] = sub['notification']['httpCustom']['url']
+                            if 'http' in el_sub['notification']:
+                                item['target'] = el_sub['notification']['http']['url']
+                            if 'httpCustom' in el_sub['notification']:
+                                item['target'] = el_sub['notification']['httpCustom']['url']
                             item['type'] = 'ignored'
                             out.append(dict(item))
                             count['ignored'] += 1
@@ -170,14 +173,14 @@ if __name__ == '__main__':
                 count['disabled'] += 1
             else:
                 # Add subscription
-                file = os.path.split(os.path.abspath(__file__))[0] + '/templates/' + el['template']+'.json'
+                file = path.split(path.abspath(__file__))[0] + '/templates/' + el['template']+'.json'
 
-                template = jsn.load(open(file))
+                template = load(open(file))
                 template['notification']['httpCustom']['url'] = el['target'] + template['notification']['httpCustom']['url']
                 template['notification']['httpCustom']['headers'] = {'mark': el['mark']}
                 template['description'] = el['description']
 
-                data = jsn.dumps(template)
+                data = dumps(template)
 
                 headers['Content-Type'] = 'application/json'
 
@@ -195,11 +198,11 @@ if __name__ == '__main__':
                     if 'Fiware-ServicePath' in headers:
                         del headers['Fiware-ServicePath']
 
-                resp = requests.post(url, headers=headers, data=data)
+                resp = post(url, headers=headers, data=data)
 
                 if resp.status_code == 201:
                     item = {'description': template['description'],
-                            'id': re.sub('/v2/subscriptions/', '', resp.headers['Location']),
+                            'id': sub('/v2/subscriptions/', '', resp.headers['Location']),
                             'mark': el['mark'],
                             'path': el['path'],
                             'service': el['service'],
@@ -210,7 +213,7 @@ if __name__ == '__main__':
                     out.append(dict(item))
                     count['added'] += 1
                 else:
-                    sys.exit(1)
+                    exit(1)
         else:
             count['errors'] += 1
             item = {'description': '',
@@ -222,6 +225,7 @@ if __name__ == '__main__':
                     'target': el['target'],
                     'type': 'error'}
             out.append(dict(item))
+
     # Show results in table format
     print('TOTAL:')
     print('config:  ', count['config'])
@@ -233,8 +237,8 @@ if __name__ == '__main__':
     print('added :  ', count['added'])
     print('errors :  ', count['errors'])
 
-    if xls:
-        workbook = xlsxwriter.Workbook(xls + '/info.xlsx')
+    if args.xls:
+        workbook = Workbook(args.xls + '/info.xlsx')
 
         format_title = workbook.add_format({
             'align': 'center',

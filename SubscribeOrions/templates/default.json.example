@@ -1,0 +1,16 @@
+{
+    "description": "",
+    "subject": {
+        "entities": [
+            {
+                "idPattern": ".*"
+            }
+        ]
+    },
+    "notification": {
+        "httpCustom": {
+            "url": "/v2/op/notify"
+        }
+    },
+    "throttling": 0
+}

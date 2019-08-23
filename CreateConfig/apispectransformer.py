@@ -1,8 +1,14 @@
-import gspread
-import json
-import argparse
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+from argparse import ArgumentParser
+from gspread import authorize
+from json import dumps
 from oauth2client.service_account import ServiceAccountCredentials
+
+scope = ['https://spreadsheets.google.com/feeds']
+items = ['source', 'source_files', 'target', 'target_files', 'transform']
+out = 'apispectransformer.json'
 
 
 def expand(column):
@@ -12,13 +18,12 @@ def expand(column):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
 
     parser.add_argument('--id', dest="id", required=True, help='ID of google doc', action="store")
     parser.add_argument('--format', dest="format", default='swagger20', help='API format, swagger by default',
                         action="store")
     parser.add_argument('branches', type=str, metavar='N', nargs='*', help='branches, master by default')
-
     args = parser.parse_args()
 
     print("Started")
@@ -34,16 +39,14 @@ if __name__ == '__main__':
         for el in args.branches:
             result['branches'].append(el)
 
-    scope = ['https://spreadsheets.google.com/feeds']
-    items = ['source', 'source_files', 'target', 'target_files', 'transform']
-
     credentials = ServiceAccountCredentials.from_json_keyfile_name('auth.json', scope)
-
-    gc = gspread.authorize(credentials)
+    gc = authorize(credentials)
 
     wks = gc.open_by_key(args.id).worksheet('Specifications')
 
     data = dict()
+
+    # collect the data from the sheet
     i = 1
     max_length = 0
     for item in items:
@@ -53,13 +56,16 @@ if __name__ == '__main__':
             max_length = len(data[item])
         i += 1
 
+    # add empty cells
     for item in items:
         if len(data[item]) < max_length:
             for i in range(0, max_length - len(data[item])):
                 data[item].append('')
 
+    # prepare result
     item = dict()
     for i in range(0, len(data[list(data.keys())[0]])):
+        # fill in empty values and transform boolean values
         if data['source_files'][i] == '':
             data['source_files'][i] = data['source_files'][i-1]
         if data['target'][i] == '':
@@ -72,6 +78,7 @@ if __name__ == '__main__':
             elif data['transform'][i] == 'TRUE':
                 data['transform'][i] = True
 
+        # should be one time check, if first value is null exit, otherwise add item
         if data['source'][i] != '':
             if i > 0:
                 result['repositories'].append(item)
@@ -80,8 +87,10 @@ if __name__ == '__main__':
             item['target'] = data['target'][i]
             item['files'] = list()
         else:
-            status = False
+            print('An error found, exit')
+            exit(1)
 
+        # append files
         file = dict()
         if data['source_files'][i] != '':
             file['source'] = data['source_files'][i]
@@ -95,8 +104,8 @@ if __name__ == '__main__':
 
     result['repositories'] = sorted(result['repositories'], key=lambda k: k['source'])
 
-    f = open("apispectransformer.json", "w")
-    f.write(json.dumps(result, indent=2))
+    f = open(out, 'w')
+    f.write(dumps(result, indent=2))
 
     print("Done")
 

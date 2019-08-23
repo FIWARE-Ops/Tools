@@ -17,8 +17,7 @@
         {
             "mark": 2,
             "source": "https://example.com",
-            "target": "orion2:1026",
-            "template": "v2"
+            "target": "orion2:1026"
         }
     ]
 }
