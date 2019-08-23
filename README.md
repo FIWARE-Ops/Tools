@@ -12,3 +12,4 @@
 + [Subscribe the list of Orions](./SubscribeOrions)
 + [Synchronize Repositories in the GitHub](./SynchronizeGitHubRepos)
 + [Synchronize Organizations in the DockerHub](./SynchronizeDockerHubOrgs)
++ [Configure IoT Agents](./ConfigureIoTAgents)

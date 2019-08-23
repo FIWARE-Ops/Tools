@@ -20,6 +20,7 @@ columns_c = ['GE Tech Name',
              'Q&A',
              'Academy-Legacy',
              'Catalog-Legacy',
+             'Type-Legacy',
              'Coverall']
 
 columns_d = ['GE Tech Name',
@@ -40,8 +41,6 @@ tsc_dashboard_template = {
     'academy': '',
     'readthedocs': '',
     'helpdesk': '',
-    'backlog': '',
-    'jira_workitem': '',
     'coverall': ''
 }
 
@@ -153,7 +152,7 @@ if __name__ == '__main__':
                 result['enablers'].append(item)
 
         result['enablers'] = sorted(result['enablers'], key=lambda k: k['name'])
-        f = open('fiware-clair.json', 'w')
+        f = open('enablers.json', 'w')
 
     if args.reposync:
         result['repositories'] = list()
@@ -248,7 +247,7 @@ if __name__ == '__main__':
                 item['helpdesk'] = values_c[el][index_c['HelpDesk']]
 
             if values_c[el][index_c['Coverall']] not in ['?', '-']:
-                item['coverll'] = values_c[el][index_c['Coverall']]
+                item['coverall'] = values_c[el][index_c['Coverall']]
 
             item['github'] = list()
             for el_g in range(1, len(values_g)):
@@ -265,7 +264,7 @@ if __name__ == '__main__':
             result.append(item)
 
         result = sorted(result, key=lambda k: k['enabler'])
-        f = open('tsc-metrics.json', 'w')
+        f = open('metrics_endpoints.json', 'w')
 
     if args.tscenablers:
         result = list()
@@ -276,12 +275,14 @@ if __name__ == '__main__':
             item['status'] = values_c[el][index_c['Status']]
             if values_c[el][index_c['Chapter']] not in ['-']:
                 item['chapter'] = values_c[el][index_c['Chapter']]
+            if values_c[el][index_c['Type-Legacy']] not in ['-']:
+                item['type'] = values_c[el][index_c['Type-Legacy']]
             item['owner'] = values_c[el][index_c['Owner']]
 
             result.append(item)
 
         result = sorted(result, key=lambda k: k['name'])
-        f = open('tsc-enablers.json', 'w')
+        f = open('enablers.json', 'w')
 
-    f.write(dumps(result, indent=4) + '\n')
+    f.write(dumps(result, indent=4, ensure_ascii=False) + '\n')
     print("Finished")
