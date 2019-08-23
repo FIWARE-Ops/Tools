@@ -9,7 +9,7 @@
     },
     "notification": {
         "httpCustom": {
-            "url": "/v2/op/notify"
+            "url": "{}/v2/op/notify"
         }
     },
     "throttling": 0

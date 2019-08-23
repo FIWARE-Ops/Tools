@@ -10,11 +10,11 @@ if [ -z "${PROJECT}" ]; then
 fi
 
 if [ -z "${USER}" ]; then
-    read -p "Username: " USER
-    read -s -p "Password: " PASSWORD
+    read -r -p "Username: " USER
+    read -r -s -p "Password: " PASSWORD
 fi
 
-TOKEN=$(curl -X POST -s -d "username=${USER}&password=${PASSWORD}" https://tools.lab.fiware.org/ktp/${PROJECT})
+TOKEN=$(curl -X POST -s -d "username=${USER}&password=${PASSWORD}" "https://tools.lab.fiware.org/ktp/${PROJECT}")
 
 echo ""
 echo -e "\nToken: $TOKEN"

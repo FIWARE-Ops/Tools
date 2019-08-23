@@ -24,4 +24,4 @@ $ python3 run.py --config <PATH_TO_CONFIG> --general --hooks
 
 ## How to configure
 + You should provide a valid token for GitHub with an environment variable TOKEN.
-+ Sample config is located [here](./config.json.example).
++ Sample config is located [here](./config.example.json).

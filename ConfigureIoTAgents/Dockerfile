@@ -6,8 +6,10 @@ WORKDIR /opt/
 
 COPY . /opt
 
-RUN apk add --no-cache git build-base curl && \
+RUN apk update && \
+    apk add --no-cache git build-base curl && \
     pip install -r requirements.txt && \
-    apk del build-base git
+    apk del build-base git && \
+    rm -f /var/cache/apk/*
 
 ENTRYPOINT ["/usr/bin/env", "python3", "-u", "/opt/run.py"]

@@ -7,24 +7,23 @@ from requests import get
 from xlsxwriter import Workbook
 
 
-repo_items = ['name', 'star_count', 'is_automated', 'source_repo', 'last_updated', 'pull_count']
-build_items = ['repo', 'name', 'last_updated']
-url_template = 'https://hub.docker.com/v2/repositories/'
-
+url_template_repos = 'https://hub.docker.com/v2/repositories/{}/'
+url_template_repos2 = 'https://hub.docker.com/v2/repositories/{}/{}/autobuild'
+url_template_tags = 'https://hub.docker.com/v2/repositories/{}/{}/tags'
+repos_items = ['name', 'star_count', 'is_automated', 'source_repo', 'last_updated', 'pull_count']
+tags_items = ['repo', 'name', 'last_updated']
 
 if __name__ == '__main__':
 
     parser = ArgumentParser()
-    parser.add_argument('--owner', dest="owner", default='fiware', help='owner (default: fiware)', action="store")
+    parser.add_argument('--owner', default='fiware', help='owner (default: fiware)', action="store")
     args = parser.parse_args()
 
     repos = list()
     tags = list()
 
-    url_template = url_template + args.owner + '/'
-
     print('collecting main data')
-    url = url_template
+    url = url_template_repos.format(args.owner)
     while True:
         reply = get(url)
 
@@ -32,7 +31,7 @@ if __name__ == '__main__':
             resp = loads(reply.text)
             for el in range(0, len(resp['results'])):
                 block = dict()
-                for item in repo_items:
+                for item in repos_items:
                     if item != 'source_repo':
                         if type(resp['results'][el][item]) is str:
                             block[item] = str(resp['results'][el][item]).strip()
@@ -46,11 +45,10 @@ if __name__ == '__main__':
         else:
             exit(1)
 
-    print('collecting source_repo data')
+    print('collecting autobuild data')
     for el in range(0, len(repos)):
         if repos[el]['is_automated']:
-            url = url_template + repos[el]['name'] + '/autobuild'
-            reply = get(url)
+            reply = get(url_template_repos2.format(args.owner, repos[el]['name']))
             if reply.status_code == 200:
                 resp = loads(reply.text)
                 repos[el]['source_repo'] = resp['source_url'].strip()
@@ -61,14 +59,13 @@ if __name__ == '__main__':
 
     print('collecting tags data')
     for el in range(0, len(repos)):
-        url = url_template + repos[el]['name'] + '/tags'
-        reply = get(url)
+        reply = get(url_template_tags.format(args.owner, repos[el]['name']))
         if reply.status_code == 200:
             resp = loads(reply.text)
             for tag in resp['results']:
                 block = dict()
                 block['repo'] = repos[el]['name']
-                for item in build_items:
+                for item in tags_items:
                     if item != 'repo':
                         if tag[item] is not None:
                             block[item] = tag[item].strip()
@@ -78,96 +75,53 @@ if __name__ == '__main__':
         else:
             exit(1)
 
-    print('preparing xlsx')
+    print('preparing result')
     workbook = Workbook('info.xlsx')
-    worksheet1 = workbook.add_worksheet()
-    worksheet2 = workbook.add_worksheet()
+    result = dict()
 
-    cell_format = workbook.add_format({
+    format_title = workbook.add_format({
         'align': 'center',
         'valign': 'vcenter',
         'border': 1,
         'bold': True})
 
-    col = 0
-    for item in repo_items:
-        worksheet1.write(0, col, item, cell_format)
-        col += 1
-
-    col = 0
-    for item in build_items:
-        worksheet2.write(0, col, item, cell_format)
-        col += 1
-
-    cell_format = workbook.add_format({
+    format_cell = workbook.add_format({
         'align': 'left',
         'valign': 'vcenter',
-        'border': 1})
+        'border': 1,
+        'bold': False})
 
-    print('fill in repos')
-    row = 1
-    for el in range(0, len(repos)):
+    for ws_type in ['repos', 'tags']:
+        print('Fill in', ws_type)
+
+        result[ws_type] = workbook.add_worksheet(ws_type)
+        max_size = dict()
+
         col = 0
-        for item in repo_items:
-            worksheet1.write(row, col, repos[el][item], cell_format)
+        for item in eval(ws_type + '_items'):
+            result[ws_type].write(0, col, item, format_title)
             col += 1
-        row += 1
+            max_size[item] = len(item)
 
-    print('fill in tags')
-    row = 1
-    for el in range(0, len(tags)):
+        row = 1
+        for el in range(0, len(eval(ws_type))):
+            col = 0
+            for item in eval(ws_type + '_items'):
+                length = len(str(eval(ws_type)[el][item]))
+                if max_size[item] < length:
+                    max_size[item] = length
+                result[ws_type].write(row, col, eval(ws_type)[el][item], format_cell)
+                col += 1
+            row += 1
+
         col = 0
-        for item in build_items:
-            worksheet2.write(row, col, tags[el][item], cell_format)
+        for item in eval(ws_type + '_items'):
+            if item in ['repo', 'name']:
+                multi = 1.23
+            else:
+                multi = 1.1
+            result[ws_type].set_column(col, col, max_size[item] / multi)
             col += 1
-        row += 1
-
-    current = 2
-    start = 2
-    item = tags[0]['repo']
-    for el in range(1, len(tags)):
-        if tags[el]['repo'] != item:
-            if current - start >= 1:
-                merge_range = 'A' + str(start) + ':A' + str(current)
-                worksheet2.merge_range(merge_range, item, cell_format)
-            start = current + 1
-            item = tags[el]['repo']
-        current += 1
-
-    print('autoscale cells')
-    max_size = dict()
-    for item in repo_items:
-        max_size[item] = 0
-
-    for el in range(0, len(repos)):
-        for item in repo_items:
-            length = len(str(repos[el][item]))
-            if max_size[item] < length:
-                max_size[item] = length
-
-    for item in repo_items:
-        length = len(item)
-        if max_size[item] < length:
-            max_size[item] = length
-
-    col = 0
-    for item in repo_items:
-        worksheet1.set_column(col, col, max_size[item])
-        col += 1
-
-    max_size = dict()
-    for item in build_items:
-        max_size[item] = 0
-
-    for el in range(0, len(tags)):
-        for item in build_items:
-            length = len(str(tags[el][item]))
-            if max_size[item] < length:
-                max_size[item] = length
-
-    col = 0
-    for item in build_items:
-        worksheet2.set_column(col, col, max_size[item])
-        col += 1
 
     workbook.close()
+    print("Done")

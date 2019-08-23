@@ -9,9 +9,9 @@ It scrapes information from a google spreedsheet and prepares a config for these
 
 ## How to run
 ```console
-$ python3 reposynchronizer.py --id ${SOME_GDOC_ID}
+$ python3 reposynchronizer.py --id ${SOME_GDOC_ID} -c -r -p -a -tm -te
 ```
 
 ## How to configure
 + You should provide a valid auth file from Google.
-+ Sample auth file is located [here](./auth.json.example).
++ Sample auth file is located [here](./auth.example.json).

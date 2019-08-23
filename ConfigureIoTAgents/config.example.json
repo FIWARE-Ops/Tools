@@ -1,0 +1,29 @@
+{
+    "host": "127.0.0.1",
+    "port": "4096",
+    "header_service": "service",
+    "header_service_path": "/path",
+    "service": {
+        "apikey": "1234567890",
+        "cbroker": "http://127.0.0.1:1026",
+        "entity_type": "Test-Type",
+        "resource": "/iot/d"
+    },
+    "device": {
+        "device_id": "car",
+        "protocol": "PDI-IoTA-UltraLight",
+        "transport": "HTTP",
+        "entity_name": "Test-Entity",
+        "entity_type": "Test-Type",
+        "attributes": [{
+            "object_id": "s",
+            "name": "attr1",
+            "type": "Number"
+        },
+        {
+             "object_id": "f",
+             "name": "attr2",
+             "type": "Number"
+        }]
+    }
+}

@@ -3,3 +3,4 @@
 Temp/*
 *.xlsx
 *.json
+!*example.json

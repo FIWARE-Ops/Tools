@@ -7,8 +7,10 @@ from os import environ, path
 from requests import get
 from xlsxwriter import Workbook
 
-url_template = 'https://api.github.com/repos/'
-
+url_template_general = 'https://api.github.com/repos/{}?access_token={}'
+url_template_hooks = 'https://api.github.com/repos/{}/hooks?page={}&access_token={}'
+general_items = ['repo', 'description', 'has_issues', 'has_wiki', 'has_pages', 'has_projects', 'has_downloads']
+hooks_items = ['repo', 'active', 'url', 'content_type', 'insecure_ssl', 'events']
 
 if __name__ == '__main__':
 
@@ -21,20 +23,20 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument('--config', dest='config_path', help='path to config file',  action="store")
-    parser.add_argument('--general', dest='general', help='get general info',  action="store_true")
-    parser.add_argument('--hooks', dest='hooks', help='get webhooks info',  action="store_true")
+    parser.add_argument('--general', help='get general info',  action="store_true")
+    parser.add_argument('--hooks', help='get webhooks info',  action="store_true")
     args = parser.parse_args()
     config_path = args.config_path
-    general = args.general
-    hooks = args.hooks
 
     print("Started")
 
-    gen_items = ['repo', 'description', 'has_issues', 'has_wiki', 'has_pages', 'has_projects', 'has_downloads']
-    hook_items = ['repo', 'active', 'url', 'type', 'ssl', 'events']
+    general = None
+    hooks = None
+    arg_general = args.general
+    arg_hooks = args.hooks
 
-    if not general:
-        if not hooks:
+    if not arg_general:
+        if not arg_hooks:
             print('At lease one option should be defined')
             exit(1)
 
@@ -59,56 +61,46 @@ if __name__ == '__main__':
         print('Repositories list is empty')
         exit(1)
 
-    if general:
-        gen = []
+    if arg_general:
+        general = list()
         print('Collecting general info')
         for repo in config['repositories']:
-            url = url_template + repo['target'] + '?access_token=' + token
-            response = get(url)
+            response = get(url_template_general.format(repo['target'], token))
             if response.status_code == 200:
                 data = loads(response.text)
-                item = {'repo': repo['target'],
-                        'description': data['description'],
-                        'has_issues': data['has_issues'],
-                        'has_wiki': data['has_wiki'],
-                        'has_pages': data['has_pages'],
-                        'has_projects': data['has_projects'],
-                        'has_downloads': data['has_downloads']}
-                gen.append(dict(item))
+                tmp = dict()
+                tmp['repo'] = repo['target']
+                for item in general_items:
+                    if item in ['repo']:
+                        continue
+                    tmp[item] = data[item]
+                general.append(dict(tmp))
             else:
                 print('Something is wrong, check config')
                 exit(1)
 
-    if hooks:
-        hook = []
-        print('Collecting WebHooks info')
+    if arg_hooks:
+        hooks = list()
+        print('Collecting webhooks info')
         for repo in config['repositories']:
             i = 1
             status = False
             while not status:
-                url = url_template + repo['target'] + '/hooks' + '?page=' + str(i) + '&access_token=' + token
-                response = get(url)
+                response = get(url_template_hooks.format(repo['target'], str(i), token))
                 if response.status_code == 200:
                     data = loads(response.text)
                     for element in data:
-                        item = {'repo': repo['target'],
-                                'active': '',
-                                'url': '',
-                                'type': '',
-                                'ssl': '',
-                                'events': ''}
+                        tmp = dict()
+                        tmp['repo'] = repo['target']
                         if 'active' in element:
-                            item['active'] = element['active']
-                        if 'config' in element:
-                            if 'url' in element['config']:
-                                item['url'] = element['config']['url']
-                            if 'content_type' in element['config']:
-                                item['type'] = element['config']['content_type']
-                            if 'insecure_ssl' in element['config']:
-                                item['ssl'] = element['config']['insecure_ssl']
+                            tmp['active'] = element['active']
                         if 'events' in element:
-                            item['events'] = dumps(element['events'])
-                        hook.append(dict(item))
+                            tmp['events'] = dumps(element['events'])
+                        for item in hooks_items:
+                            if item in ['repo', 'active', 'events']:
+                                continue
+                            tmp[item] = element['config'][item]
+                        hooks.append(dict(tmp))
                     if 'next' not in response:
                         status = True
                     else:
@@ -117,7 +109,9 @@ if __name__ == '__main__':
                     print('Something is wrong, check config')
                     exit(1)
 
+    print('Preparing result')
     workbook = Workbook('info.xlsx')
+    result = dict()
 
     format_title = workbook.add_format({
         'align': 'center',
@@ -131,58 +125,38 @@ if __name__ == '__main__':
         'border': 1,
         'bold': False})
 
-    if general:
-        print('Fill in general')
-        ws_gen = workbook.add_worksheet()
+    for ws_type in ['general', 'hooks']:
+        if not eval('arg_' + ws_type):
+            continue
+        print('Fill in', ws_type)
+
+        result[ws_type] = workbook.add_worksheet(ws_type)
         max_size = dict()
 
         col = 0
-        for item in gen_items:
-            ws_gen.write(0, col, item, format_title)
+        for item in eval(ws_type + '_items'):
+            result[ws_type].write(0, col, item, format_title)
             col += 1
             max_size[item] = len(item)
 
         row = 1
-        for el in range(0, len(gen)):
+        for el in range(0, len(eval(ws_type))):
             col = 0
-            for item in gen_items:
-                length = len(str(gen[el][item]))
+            for item in eval(ws_type + '_items'):
+                length = len(str(eval(ws_type)[el][item]))
                 if max_size[item] < length:
                     max_size[item] = length
-                ws_gen.write(row, col, gen[el][item], format_cell)
+                result[ws_type].write(row, col, eval(ws_type)[el][item], format_cell)
                 col += 1
             row += 1
 
         col = 0
-        for item in gen_items:
-            ws_gen.set_column(col, col, max_size[item])
-            col += 1
-
-    if hooks:
-        print('Fill in hooks')
-        ws_hook = workbook.add_worksheet()
-        max_size = dict()
-
-        col = 0
-        for item in hook_items:
-            ws_hook.write(0, col, item, format_title)
-            col += 1
-            max_size[item] = len(item)
-
-        row = 1
-        for el in range(0, len(hook)):
-            col = 0
-            for item in hook_items:
-                length = len(str(hook[el][item]))
-                if max_size[item] < length:
-                    max_size[item] = length
-                ws_hook.write(row, col, hook[el][item], format_cell)
-                col += 1
-            row += 1
-
-        col = 0
-        for item in hook_items:
-            ws_hook.set_column(col, col, max_size[item])
+        for item in eval(ws_type + '_items'):
+            if item in ['repo', 'description', 'events']:
+                multi = 1.23
+            else:
+                multi = 1.1
+            result[ws_type].set_column(col, col, max_size[item] / multi)
             col += 1
 
     workbook.close()

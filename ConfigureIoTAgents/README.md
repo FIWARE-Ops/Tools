@@ -1,6 +1,6 @@
 ## Info
 This tool is a part of [FIWARE](https://fiware.org) OPS infrastructure.
-It creates services and devices(from a template) for perfomance test
+It creates services and devices(from a template) for IoT Agents performance test
 
 ## How to run
 ```console

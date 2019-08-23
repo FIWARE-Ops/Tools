@@ -7,7 +7,6 @@
         {
             "description": "Test1",
             "mark": 1,
-            "path": "path",
             "service": "t_service",
             "source": "https://example.com",
             "state": "disabled",

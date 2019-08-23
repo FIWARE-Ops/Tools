@@ -5,28 +5,24 @@ from argparse import ArgumentParser
 from json import load, dumps
 from os import path
 from re import search, sub
-from requests import get, post, delete
+from requests import get, post, delete, exceptions
 from xlsxwriter import Workbook
 
 
-count = {'config': 0,
-         'added': 0,
-         'deleted': 0,
-         'found': 0,
-         'ignored': 0,
-         'disabled': 0,
-         'errors': 0}
-
-items = ['type', 'source', 'target', 'service', 'path', 'description', 'mark', 'id']
+items = ['type', 'source', 'target', 'service', 'description', 'mark', 'id']
 
 
 def check_validity(orion):
     link = orion + '/version'
-    reply = get(link)
+    try:
+        reply = get(link)
+    except exceptions.ConnectionError:
+        return False
+
     if reply.status_code == 200:
         return True
-    else:
-        return False
+
+    return False
 
 
 if __name__ == '__main__':
@@ -35,6 +31,19 @@ if __name__ == '__main__':
     parser.add_argument('--config', dest='config_path', help='path to config file',  action='store')
     parser.add_argument('--xls', dest='xls', help='save output to excel file (folder)', action='store')
     args = parser.parse_args()
+
+    count = {'config': 0,
+             'added': 0,
+             'deleted': 0,
+             'found': 0,
+             'ignored': 0,
+             'disabled': 0,
+             'errors': 0}
+
+    orion_failed = list()
+    services = None
+    config = None
+    prefix = None
 
     if not path.isfile(args.config_path):
         print('Config file not found')
@@ -49,11 +58,6 @@ if __name__ == '__main__':
         exit(1)
 
     print('Checking config')
-
-    services = None
-    config = None
-    prefix = None
-
     try:
         services = cfg['services']
         prefix = cfg['prefix']
@@ -101,130 +105,135 @@ if __name__ == '__main__':
     print('Started')
     item = dict()
     headers = dict()
-    done = list()
+    cleaned = list()
     out = list()
 
     for el in config:
         count['config'] += 1
+        status = True
         headers.clear()
 
         print('Working with', el['source'])
-        if check_validity(el['source']):
-            url = el['source']+'/v2/subscriptions'
 
-            if 'token'in el:
-                headers['X-Auth-Token'] = el['token']
+        if el['source'] in orion_failed:
+            status = False
 
-            # Clean block. We don't store subscriptions, so simply remove everything that has mark
-            if not el['source'] in done:
-                done.append(el['source'])
+        if status and not check_validity(el['source']):
+            print(el['source'], "is unavailable")
+            orion_failed.append(el['source'])
+            status = False
 
-                for service in services:
-                    headers['Fiware-Service'] = service
-                    resp = get(url + '?limit=200', headers=headers).json()
-                    for el_sub in resp:
-                        count['found'] += 1
-                        ignore = True
-                        item.clear()
-                        if 'notification' in el_sub:
-                            if 'httpCustom' in el_sub['notification']:
-                                if 'headers' in el_sub['notification']['httpCustom']:
-                                    if 'mark' in el_sub['notification']['httpCustom']['headers']:
-                                        if search(prefix, el_sub['notification']['httpCustom']['headers']['mark']):
-                                            delete(url + '/'+el_sub['id'], headers=headers)
-                                            if 'description' in el_sub:
-                                                item['description'] = el_sub['description']
-                                            item['id'] = el_sub['id']
-                                            item['mark'] = el_sub['notification']['httpCustom']['headers']['mark']
-                                            item['path'] = ''
-                                            item['service'] = service
-                                            item['source'] = el['source']
-                                            item['target'] = el_sub['notification']['httpCustom']['url']
-                                            item['type'] = 'deleted'
-                                            out.append(dict(item))
-                                            count['deleted'] += 1
-                                            ignore = False
-
-                        if ignore:
-                            if 'description' in el_sub:
-                                item['description'] = el_sub['description']
-                            else:
-                                item['description'] = ''
-                            item['id'] = el_sub['id']
-                            item['mark'] = ''
-                            item['path'] = ''
-                            item['service'] = service
-                            item['source'] = el['source']
-                            if 'http' in el_sub['notification']:
-                                item['target'] = el_sub['notification']['http']['url']
-                            if 'httpCustom' in el_sub['notification']:
-                                item['target'] = el_sub['notification']['httpCustom']['url']
-                            item['type'] = 'ignored'
-                            out.append(dict(item))
-                            count['ignored'] += 1
-
-            # Check if enabled
-            state = True
-            if 'state' in el:
-                if el['state'] == 'disabled':
-                    state = False
-
-            if not state:
-                count['disabled'] += 1
-            else:
-                # Add subscription
-                file = path.split(path.abspath(__file__))[0] + '/templates/' + el['template']+'.json'
-
-                template = load(open(file))
-                template['notification']['httpCustom']['url'] = el['target'] + template['notification']['httpCustom']['url']
-                template['notification']['httpCustom']['headers'] = {'mark': el['mark']}
-                template['description'] = el['description']
-
-                data = dumps(template)
-
-                headers['Content-Type'] = 'application/json'
-
-                if 'service' in el:
-                    headers['Fiware-Service'] = el['service']
-                else:
-                    el['service'] = ''
-                    if 'Fiware-Service' in headers:
-                        del headers['Fiware-Service']
-
-                if 'path' in el:
-                    headers['Fiware-ServicePath'] = el['path']
-                else:
-                    el['path'] = ''
-                    if 'Fiware-ServicePath' in headers:
-                        del headers['Fiware-ServicePath']
-
-                resp = post(url, headers=headers, data=data)
-
-                if resp.status_code == 201:
-                    item = {'description': template['description'],
-                            'id': sub('/v2/subscriptions/', '', resp.headers['Location']),
-                            'mark': el['mark'],
-                            'path': el['path'],
-                            'service': el['service'],
-                            'source': el['source'],
-                            'target': template['notification']['httpCustom']['url'],
-                            'type': 'added'}
-
-                    out.append(dict(item))
-                    count['added'] += 1
-                else:
-                    exit(1)
-        else:
+        if not status:
             count['errors'] += 1
-            item = {'description': '',
-                    'id': '',
+            item = {'id': 'orion unavailable',
                     'mark': el['mark'],
-                    'path': '',
-                    'service': '',
+                    'service': el['service'],
                     'source': el['source'],
                     'target': el['target'],
-                    'type': 'error'}
-            out.append(dict(item))
+                    'type': 'errored',
+                    'description': el['description']}
+            out.append(item)
+            continue
+
+        url = el['source']+'/v2/subscriptions'
+
+        if 'token'in el:
+            headers['X-Auth-Token'] = el['token']
+
+        # Clean block. We don't store subscriptions, so simply remove everything that has a mark
+        if not el['source'] in cleaned:
+            cleaned.append(el['source'])
+
+            for service in services:
+                headers['Fiware-Service'] = service
+                resp = get(url + '?limit=200', headers=headers).json()
+                for el_sub in resp:
+                    count['found'] += 1
+                    ignore = True
+                    try:
+                        if search(prefix, el_sub['notification']['httpCustom']['headers']['mark']):
+                            delete(url + '/'+el_sub['id'], headers=headers)
+                            item = {'id': el_sub['id'],
+                                    'mark':  el_sub['notification']['httpCustom']['headers']['mark'],
+                                    'service': service,
+                                    'source': el['source'],
+                                    'target': el_sub['notification']['httpCustom']['url'],
+                                    'type': 'deleted',
+                                    'description': el_sub['description'] if 'description' in el_sub else ''}
+
+                            count['deleted'] += 1
+                        else:
+                            raise KeyError
+                    except KeyError:
+                        item = {'id': el_sub['id'],
+                                'mark': '',
+                                'service': service,
+                                'source': el['source'],
+                                'type': 'ignored',
+                                'description': el_sub['description'] if 'description' in el_sub else ''}
+                        try:
+                            item['target'] = el_sub['notification']['http']['url']
+                        except KeyError:
+                            try:
+                                item['target'] = el_sub['notification']['httpCustom']['url']
+                            except KeyError:
+                                pass
+                            finally:
+                                item['target'] = ''
+
+                        count['ignored'] += 1
+                    if item:
+                        out.append(dict(item))
+
+        # Check if enabled
+        try:
+            if el['state'] == 'disabled':
+                state = False
+            else:
+                state = True
+        except KeyError:
+            state = True
+
+        if not state:
+            count['disabled'] += 1
+            continue
+
+        # Add subscription
+        file = path.split(path.abspath(__file__))[0] + '/templates/' + el['template']+'.json'
+
+        template = load(open(file))
+        template['notification']['httpCustom']['headers'] = {'mark': el['mark']}
+        template['description'] = el['description']
+        tmp_url = template['notification']['httpCustom']['url'].format(el['target'])
+        template['notification']['httpCustom']['url'] = tmp_url
+
+        data = dumps(template)
+
+        headers['Content-Type'] = 'application/json'
+
+        if 'service' in el:
+            headers['Fiware-Service'] = el['service']
+        else:
+            el['service'] = ''
+            if 'Fiware-Service' in headers:
+                del headers['Fiware-Service']
+
+        item = {'id': '',
+                'mark': el['mark'],
+                'service': el['service'],
+                'source': el['source'],
+                'target': template['notification']['httpCustom']['url'],
+                'type': 'added',
+                'description': template['description']}
+
+        resp = post(url, headers=headers, data=data)
+        if resp.status_code == 201:
+            item['id'] = sub('/v2/subscriptions/', '', resp.headers['Location'])
+            count['added'] += 1
+        else:
+            count['errors'] += 1
+            item['type'] = 'error'
+        out.append(dict(item))
 
     # Show results in table format
     print('TOTAL:')

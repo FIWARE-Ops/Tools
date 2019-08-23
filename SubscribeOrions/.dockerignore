@@ -1,6 +1,3 @@
-*.sh
-*.json
-*.xlsx
-*out*
 *.md
+out
 Dockerfile

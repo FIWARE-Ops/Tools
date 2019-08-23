@@ -10,7 +10,9 @@ from subprocess import run as execute
 
 limit = 10
 repos = list()
-url_template = 'https://hub.docker.com/v2/repositories/{}'
+url_template_main = 'https://hub.docker.com/v2/repositories/{}'
+url_template_repos = 'https://hub.docker.com/v2/repositories/{}/{}/tags?page_size=1024'
+url_template_tags = '{}/{}:{}'
 
 
 async def harvest(source, src):
@@ -38,7 +40,7 @@ async def harvest_one(repo, src, session):
     result['name'] = repo
     result['tags'] = list()
 
-    url_tag = url_template.format(src) + '/' + repo + '/tags/?page_size=1024'
+    url_tag = url_template_repos.format(src, repo)
     async with session.get(url_tag) as response:
         content = await response.read()
 
@@ -53,29 +55,30 @@ async def harvest_one(repo, src, session):
 if __name__ == '__main__':
 
     parser = ArgumentParser()
-    parser.add_argument('--source', dest='source', help='source org', default='fiware', action='store')
-    parser.add_argument('--target', dest='target', help='target org', default='fiwarelegacy', action='store')
+    parser.add_argument('--source', help='source org', default='fiware', action='store')
+    parser.add_argument('--target', help='target org', default='fiwarelegacy', action='store')
     args = parser.parse_args()
 
     print("Started")
+
     print("Loading list of repos")
-    request = loads(get(url_template.format(args.source) + '?page_size=1024').text)
+    request = loads(get(url_template_main.format(args.source) + '?page_size=1024').text)
 
     for item in request['results']:
         if item['namespace'] == args.source:
             repos.append(item['name'])
 
     print("Loading tags")
-    res = run(harvest(repos, args.source))
+    tags = run(harvest(repos, args.source))
 
     print("Syncing")
-    for item in res:
-        for item2 in item['tags']:
-            pi_s = url_template.format(args.source) + '/' + item['name'] + ':' + item2
-            pi_t = url_template.format(args.target) + '/' + item['name'] + ':' + item2
-            print('executing:', pi_s)
+    for repository in tags:
+        for tag in repository['tags']:
+            source = url_template_tags.format(args.source, repository['name'], tag)
+            target = url_template_tags.format(args.target, repository['name'], tag)
+            print('executing:', source)
             print('pulling..')
-            execute(['docker', 'pull', pi_s])
-            execute(['docker', 'tag', pi_s, pi_t])
+            execute(['docker', 'pull', source])
+            execute(['docker', 'tag', source, target])
             print('pushing..')
-            execute(['docker', 'push', pi_t])
+            execute(['docker', 'push', target])

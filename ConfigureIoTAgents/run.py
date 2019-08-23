@@ -33,6 +33,8 @@ async def configure(start, end, limit, mask, config):
         'fiware-servicepath': config['header_service_path']
     }
 
+    len_mask = len(mask)
+
     logger.info('Posting services')
     url = 'http://' + config['host'] + ':' + config['port'] + '/iot/services'
     data = dict()
@@ -56,7 +58,7 @@ async def configure(start, end, limit, mask, config):
     data = list()
     for item in range(start, end):
         device = deepcopy(config['device'])
-        device['device_id'] = device['device_id'] + str(item).rjust(4, '0')
+        device['device_id'] = device['device_id'] + str(item).rjust(len_mask, '0')
         data.append(device)
 
     # splitting list to list of lists to fit into limits
@@ -113,16 +115,15 @@ def setup_logger():
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--start', dest='start', help='first item', default='1', action='store')
-    parser.add_argument('--end', dest='end', help='last item', default='3000', action='store')
-    parser.add_argument('--mask', dest='mask', help='mask to fill in', default='0000', action='store')
-    parser.add_argument('--config', dest='config', help='path to config file', default='./config.json',
+    parser.add_argument('--start', help='first item', default='1', action='store')
+    parser.add_argument('--end', help='last item', default='3000', action='store')
+    parser.add_argument('--mask', help='mask to fill in', default='0000', action='store')
+    parser.add_argument('--config', help='path to config file', default='./config.json',
                         action='store')
-    parser.add_argument('--limit', dest='limit', help='limit amount entities per 1 block', default=50,
+    parser.add_argument('--limit', help='limit amount entities per 1 block', default=50,
                         action='store')
     parser.add_argument('--log-level',
                         default='INFO',
-                        dest='log_level',
                         help='Set the logging output level. {0}'.format(log_levels),
                         nargs='?')
     args = parser.parse_args()
